@@ -29,17 +29,17 @@ public:
     //To stop the pthread for periodic computations to detect violation
     void stopPeriodicComputations();
 
-	//To calculate and detect Violations
+    //To calculate and detect Violations
     void* computeViolations(vector<AircraftData>& aircraft);
 
     //To display data on Display Data
-	void showDataDisplay();
+    void showDataDisplay();
 
     //To update period
-	void updateAircraftPosition();
+    void updateAircraftPosition();
 
     //To emit an alert in case a violation occurs
-	void sendViolationAlert();
+    void sendViolationAlert();
 
     //To calculate periodic computations
     void periodicComputations();
@@ -76,12 +76,8 @@ private:
 
     int periodicComputations_;
 
-    //ID thread for detecting Violations:
-   // pthread_t detectViolations;
-
     //pthread to protect shared data:
     pthread_mutex_t aircraftMutex;
-
     pthread_t aircraftMutex_;
 
 };
