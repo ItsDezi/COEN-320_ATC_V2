@@ -131,8 +131,6 @@ void ComputerSystem::updateAircraftPosition(){
     for(int i = 0; i < info.size(); i++){
 
 
-    	//send to data display:
-       // DataDisplay.sendDataToDataDisplay(info[i].data.ID, info[i].data.x, info[i].data.y, info[i].data.z);
     }
 
     pthread_mutex_unlock(&aircraftMutex);
