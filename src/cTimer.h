@@ -12,8 +12,13 @@
 #include <sys/syspage.h>
 #include <inttypes.h>
 #include <stdint.h>
-#include <sys/neutrino.h>
+#include <chrono>
+#include <thread>
+#include <pthread.h>
+//#include "pthread.h"
+//#include "conditionalvariables.h"
 
+//pthread_mutex_t mutex1; // declare the mutex variable
 class cTimer {
 	timer_t timer_id;
 	struct sigevent sig_event;
@@ -22,6 +27,7 @@ class cTimer {
 	struct timespec tv;
 
 public:
+	cTimer();
 	int count;
 	cTimer(uint32_t,uint32_t,uint32_t,uint32_t);
 	~cTimer();

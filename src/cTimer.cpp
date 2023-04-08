@@ -1,4 +1,5 @@
 #include "cTimer.h"
+pthread_mutex_t mutex1; // declare the mutex variable
 
 cTimer::cTimer(uint32_t period_sec, uint32_t period_msec, uint32_t offset_sec,uint32_t offset_msec ) {
 	const int signal = SIGALRM;
@@ -6,6 +7,7 @@ cTimer::cTimer(uint32_t period_sec, uint32_t period_msec, uint32_t offset_sec,ui
 	sigemptyset(&sig_set); // initialize a signal set
 	sigaddset(&sig_set, signal); // add SIGALRM to the signal set
 	sigprocmask(SIG_BLOCK, &sig_set, NULL); //block the signal
+	pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 
 	/* set the signal event a timer expiration */
@@ -21,10 +23,12 @@ cTimer::cTimer(uint32_t period_sec, uint32_t period_msec, uint32_t offset_sec,ui
 
 	set_timer(period_sec,1000000* period_msec,offset_sec,1000000* offset_msec);//Set the timer offset and period (both expressed in sec and nsec)
 }
+cTimer::cTimer() {}
 
 
 cTimer::~cTimer() {
 	// TODO Auto-generated destructor stub
+    //pthread_mutex_destroy(&mutex1); // destroy the mutex
 }
 
 void cTimer::set_timer(uint32_t p_sec, uint32_t p_nsec, uint32_t o_sec, uint32_t o_nsec ){
@@ -36,11 +40,18 @@ void cTimer::set_timer(uint32_t p_sec, uint32_t p_nsec, uint32_t o_sec, uint32_t
 }
 
 void cTimer::wait_next_activation() {
+    pthread_mutex_lock(&mutex1); // lock the mutex
 	int dummy;
 	/* suspend calling process until a signal is pending */
 	count++;
 	//std::cout<<count;
+	  /*pthread_mutex_lock(&mutex);
+	  pthread_cond_signal(&cond);
+	  pthread_mutex_unlock(&mutex);*/
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 	sigwait(&sig_set, &dummy);
+    pthread_mutex_unlock(&mutex1); // unlock the mutex
 	//int getID = MsgRecieve(chid, &msg_buffer, sizeof(msg_buffer), NULL);
 }
 

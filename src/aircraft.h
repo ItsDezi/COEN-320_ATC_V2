@@ -16,12 +16,15 @@
 #include "AircraftData.h"
 #include <unistd.h>
 #include "cTimer.h"
+#include <chrono>
+#include <thread>
+//#include "conditionalvariables.h"
 using namespace std;
 
 class aircraft {
 public:
 	int ID;
-	cTimer * clk;
+	cTimer clk;
 	bool arrived = false;
 	//thread m_thread;
 	aircraft();
@@ -29,7 +32,7 @@ public:
 	virtual ~aircraft();
 	AircraftData data;
 	double prevClock;
-	aircraft(AircraftData dataTing, cTimer & clk);
+	aircraft(AircraftData dataTing);
 	void test_print();
 	static void* updatePosition(void* args);
 	void changeSpeed();

@@ -6,22 +6,24 @@
 #include <list>
 #include <vector>
 #include <fstream>
+//#include <chrono>
+//#include <thread>
+#include "cTimer.h"
 
 using namespace std;
-#include "cTimer.h"
 
 struct thread_args {    /* Used as argument to the start routine thread_start() */
 	int period_sec;    //desired period of the thread in seconds
 	int period_msec;   //desired period of the thread in milliseconds
 };
-vector<aircraft> read_input(cTimer * timer);
-aircraft create_aircraft(string s, cTimer * ptr);
+vector<aircraft> read_input();
+aircraft create_aircraft(string s);
 
 vector<aircraft> aircrafts;
-
+//extern pthread_mutex_t mutex1; // declare a mutex variable
 void *thread_start (void *arg) {
 	struct thread_args *targs = ( struct thread_args * ) arg;
-	cTimer * timerPtr;
+	//cTimer * timerPtr;
 	//create radar,computer system, etc threads here
 	int period_sec=targs->period_sec;
 	int period_msec=targs->period_msec;
@@ -29,8 +31,9 @@ void *thread_start (void *arg) {
 	int count = 0;
 	cTimer timer(period_sec,period_msec,period_sec,period_msec); //initialize, set, and start the 1 second timer
 	cTimer timer5Sec(period_sec*5,period_msec*5,period_sec*5,period_msec*5);//initialize, set, and start the 5 second timer
-	timerPtr = &timer;
-	read_input(timerPtr);
+//DO NOT DELETE EITHER OF THE ABOVE TIMERS... NOT SURE WHY WE NEED BOTH, but we do
+	//timerPtr = &timer;
+	read_input();
 	cout<<"\nSIZE:"<<aircrafts.size();
 //	pthread_attr_t attr;
 //	/* Initialize attributes */
@@ -41,32 +44,39 @@ void *thread_start (void *arg) {
 //	err_no = pthread_attr_setschedpolicy(&attr,SCHED_SPORADIC);
 //	if (err_no!=0)
 //		printf("ERROR from pthread_attr_setschedpolicy() is %d \n", err_no);
+
+
+	pthread_attr_t attr;
+	/* Initialize attributes */
+	int err_no;
+	err_no = pthread_attr_init(&attr);
+	if (err_no!=0)
+		printf("ERROR from pthread_attr_init() is %d \n", err_no);
+	err_no = pthread_attr_setschedpolicy(&attr,SCHED_SPORADIC);
+	if (err_no!=0)
+		printf("ERROR from pthread_attr_setschedpolicy() is %d \n", err_no);
+	/* Set detach state */
+//	err_no = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+//	if (err_no!=0)
+//		printf("ERROR from pthread_attr_setdetachstate() is %d \n", err_no);
+    //pthread_t threads[aircrafts.size()-1];
 	while(true){
 		//cout<<"\n count: ";
 		//count++;
 		//pthread_create(&a.thread, NULL, aircraft::updatePosition, &a);
-		//cout<<"\nCLK time: "<<timer.count*1000<<endl;
+		cout<<"\nCLK time: "<<timer.count*1000<<" ms"<<endl;
 
-		if((aircrafts[arrival_index].data.arrivalTime <= (timer.count*1000)) && (aircrafts[arrival_index].arrived == false && arrival_index < aircrafts.size()))
+		if((arrival_index < aircrafts.size() && aircrafts[arrival_index].data.arrivalTime <= (timer.count*1000)) && (aircrafts[arrival_index].arrived == false ))
 		{
-			pthread_attr_t attr;
-			/* Initialize attributes */
-			int err_no;
-			err_no = pthread_attr_init(&attr);
-			if (err_no!=0)
-				printf("ERROR from pthread_attr_init() is %d \n", err_no);
-			err_no = pthread_attr_setschedpolicy(&attr,SCHED_SPORADIC);
-			if (err_no!=0)
-				printf("ERROR from pthread_attr_setschedpolicy() is %d \n", err_no);
-			/* Set detach state */
-			err_no = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-			if (err_no!=0)
-				printf("ERROR from pthread_attr_setdetachstate() is %d \n", err_no);
+
+
 			int err;
 			cout<<"\naircraft "<<aircrafts[arrival_index].data.ID<<" thread is being created "<<"at "<<timer.count<<endl;
 
 			err = pthread_create(&aircrafts[arrival_index].thread, &attr, aircraft::updatePosition, &aircrafts[arrival_index]);
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			arrival_index++;
+
 			if (err != 0){
 				printf("ERROR when creating the aircraft thread \n");
 			}
@@ -75,6 +85,7 @@ void *thread_start (void *arg) {
 		}
 
 		timer.wait_next_activation();
+
 	}//end_while
 
 
@@ -87,7 +98,6 @@ int main (int argc, char* argv[]) {
 
 	//input arguments of the thread_start routine
 	struct thread_args targs;
-
 	targs.period_sec=0;
 	targs.period_msec=1000;
 
@@ -98,8 +108,15 @@ int main (int argc, char* argv[]) {
 	if (err_no != 0){
 		printf("ERROR when creating the thread \n");
 	}
-
-
+	//-----------------------------
+	for(int i = 0; i<aircrafts.size();i++)
+	{
+		int err_no = pthread_join(aircrafts[i].thread, NULL); //force the main to wait for the termination of the thread
+		if (err_no != 0){
+			printf("ERROR when joining the thread\n");
+		}
+	}
+//--------------------------------------
 	err_no = pthread_join(thread_id, NULL); //force the main to wait for the termination of the thread
 	if (err_no != 0){
 		printf("ERROR when joining the thread\n");
@@ -107,7 +124,7 @@ int main (int argc, char* argv[]) {
 	pthread_exit(EXIT_SUCCESS);
 }
 
-vector<aircraft> read_input(cTimer * timerPtr)
+vector<aircraft> read_input()
 {
 	//cTimer * timerPtr = NULL;
 	//create radar,computer system, etc threads here
@@ -126,7 +143,7 @@ vector<aircraft> read_input(cTimer * timerPtr)
 		while ( getline (myfile,line) )
 		{
 			//cout << line << '\n';
-			a = create_aircraft(line, timerPtr);
+			a = create_aircraft(line);
 			//cout<<"\n----------------------\n"<< a.data.ID<<"\n---------------------\n";
 
 			aircrafts.push_back(a);
@@ -153,7 +170,7 @@ vector<aircraft> read_input(cTimer * timerPtr)
 
 }
 
-aircraft create_aircraft(string s, cTimer * ptr)
+aircraft create_aircraft(string s)
 {
 	int ID;
 
@@ -227,7 +244,7 @@ aircraft create_aircraft(string s, cTimer * ptr)
 
 	AircraftData d;
 	d = (AircraftData){.ID = ID, .arrivalTime = time, .x = x , .y = y , .z = z , .xSpeed = speedX, .ySpeed = speedY, .zSpeed = speedZ};
-	aircraft a = aircraft(d, *ptr);
+	aircraft a = aircraft(d);
 
 	return a;
 }

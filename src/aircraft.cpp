@@ -5,6 +5,7 @@
 //#include <pthread>
 #include "aircraft.h"
 #include <chrono>
+//extern int sigwait(const sigset_t *__set, int *__sig);
 
 using namespace std;
 
@@ -18,12 +19,12 @@ aircraft::aircraft() {
 	// TODO Auto-generated constructor stub
 	//m_thread = std::thread(&Clock::run, this);
 }
-aircraft::aircraft(AircraftData datating, cTimer & clock_in)
+aircraft::aircraft(AircraftData datating)
 {
 	//const char* ccx = data.ID.c_str();
 	//pthread_setname_np(this->thread, ccx);
 	data = datating;
-	clk = &clock_in;
+	//clk = &clock_in;
 	prevClock = datating.arrivalTime;
 	//m_thread = thread(&aircraft::run);
 }
@@ -34,19 +35,23 @@ aircraft::~aircraft() {
 
 void aircraft::test_print()
 {
-	cout<<"\nArrival Time: "<< data.arrivalTime;
-	cout<<"\nID: "<< data.ID;
-	cout<<"\nX: "<< data.x;
-	cout<<"\nY: "<< data.y;
-	cout<<"\nZ: "<< data.z;
-	cout<<"\nX Speed: "<< data.xSpeed;
-	cout<<"\nY Speed: "<< data.ySpeed;
-	cout<<"\nZ Speed: "<< data.zSpeed;
+	//cout<<"Arrival Time: "<< data.arrivalTime<<endl;
+	cout<<"ID: "<< data.ID<<endl;
+	cout<<"X: "<< data.x<<endl;
+	cout<<"Y: "<< data.y<<endl;
+	cout<<"Z: "<< data.z<<endl;
+	cout<<"X Speed: "<< data.xSpeed<<endl;
+	cout<<"Y Speed: "<< data.ySpeed<<endl;
+	cout<<"Z Speed: "<< data.zSpeed<<endl;
 }
 void* aircraft::updatePosition(void* args)//
 {
 	aircraft* a = (aircraft*) args;
-	cout<<"\nTimer count from update position: "<<a->clk->count<<endl;
+	//cout<<"\nTimer count from update position: "<<a->clk->count<<endl;
+	//cTimer timer(1,0,1,0); //initialize, set, and start the 1 second timer
+	a->clk = cTimer(1,0,1,0);
+	//sleep(1);
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	a->arrived = true;
 	while(true)
 	{
@@ -56,21 +61,36 @@ void* aircraft::updatePosition(void* args)//
 	//aircraft *a = this;
 	//this->test_print();
 	//a->test_print();
-	//cout<<"\nupdatePosition is being called!";
-	cout<<"\nAircraft "<< a->data.ID << " is calling updatePositon at "<<a->clk->count<<endl;
+	//cout<<"\nupdatePosition is being called at "<<timer.count<<endl;
+	cout<<"\nAircraft "<< a->data.ID << " is calling updatePositon at "<<a->clk.count<<" seconds(relative)"<<endl;
 	//sleep(2);
-	int t = (1000*(a->clk->count) - a->prevClock);//PROBLEM?!?!?!?!?
+	//int t = (1000*(a->clk->count) - a->prevClock);//PROBLEM?!?!?!?!?
 	//cout<<"\n clock from aircraft is: "<< a->clk->elapsed();
 	//cout<<"\n previous clock count: "<< a->prevClock;
-	a->prevClock = a->clk->count;
-	a->data.x += (a->data.xSpeed * t)/1000;//dividing by 1000 because we are dealing with ms
-	a->data.y += (a->data.ySpeed * t)/1000;
-	a->data.z += (a->data.zSpeed * t)/1000;
-	//a->test_print();
-	a->clk->wait_next_activation();
+	//a->prevClock = a->clk->count;
+	a->data.x += (a->data.xSpeed);
+	a->data.y += (a->data.ySpeed);
+	a->data.z += (a->data.zSpeed);
+	a->test_print();
+	  /*pthread_mutex_lock(&mutex);
+	  pthread_cond_wait(&cond, &mutex);
+	  pthread_mutex_unlock(&mutex);*/
+	//int * dummy;
+	//a->clk->sigwait(a->clk->sig_set, &dummy);
+	//int dummy;
+	//cout<<"\nAircraft "<< a->data.ID << " before wait" <<endl;
+	//usleep(1);
+	//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	a->clk.wait_next_activation();
+	//sigwait(&timer.sig_set, &dummy);
+	//cout<<"\nAircraft "<< a->data.ID << " after wait" <<endl;
+	//cout.flush();
 	}
 }
-
+struct thread_args {    /* Used as argument to the start routine thread_start() */
+	int period_sec;    //desired period of the thread in seconds
+	int period_msec;   //desired period of the thread in milliseconds
+};
 void aircraft::changeSpeed()//when commands are received from the operator console
 {
 
